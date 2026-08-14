@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chhattisgarh e-District · Voice Registration</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="voice-app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="logo-mark">CG</span>
+          <span>Chhattisgarh e-District</span>
+        </div>
+        <nav>
+          <a href="#" class="active">
+            <span class="icon">RG</span>
+            Registration
+          </a>
+          <a href="#">
+            <span class="icon">SV</span>
+            Service Catalogue
+          </a>
+          <a href="#">
+            <span class="icon">SP</span>
+            Support
+          </a>
+        </nav>
+      </aside>
+      <div class="main-area">
+        <header class="top-bar">
+          <button class="menu-button" type="button" aria-label="Open menu">
+            Menu
+          </button>
+          <div class="searchbar" role="search">
+            <span aria-hidden="true">Search</span>
+            <input
+              type="search"
+              placeholder="Search e-District services"
+              aria-label="Search e-District services"
+            />
+          </div>
+          <div class="top-actions">
+            <button class="chip-button" type="button">Help Center</button>
+            <button
+              class="icon-button"
+              type="button"
+              aria-label="View notifications"
+            >
+              !
+            </button>
+            <div class="avatar" aria-hidden="true">AK</div>
+          </div>
+        </header>
+        <div class="content-area">
+          <div class="back-row">
+            <a class="back-button" href="#">Back to Dashboard</a>
+            <span>Citizen Services</span>
+          </div>
+          <section class="hero-card">
+            <div class="hero-info">
+              <div class="service-tag">
+                <span class="service-icon">CG</span>
+                <span>Chhattisgarh e-District</span>
+              </div>
+              <h1>Citizen Portal Registration</h1>
+              <span>
+                Create your e-District account with real-time voice assistance
+                and Bedrock powered routing.
+              </span>
+            </div>
+            <button class="logout-button" type="button">Registration Help</button>
+          </section>
+          <section class="step-summary">
+            <h2>Account Setup Overview</h2>
+            <div class="step-grid">
+              <button
+                type="button"
+                class="step-card step-indicator is-active"
+                data-step="1"
+              >
+                <span class="status-badge">In Progress</span>
+                <span class="title">Citizen Account Details</span>
+                <p>Provide your desired username and contact information.</p>
+              </button>
+            </div>
+          </section>
+          <section class="assistant-card">
+            <h2>Voice Assistant</h2>
+            <p>
+              Use the guided assistant to complete the registration without
+              leaving the e-District experience.
+            </p>
+            <label for="language-select">
+              Preferred Language
+              <select id="language-select">
+                <option value="en-US" selected>English</option>
+                <option value="hi-IN">Hindi (हिंदी)</option>
+              </select>
+            </label>
+            <div class="controls">
+              <button id="start-button" class="primary-button" type="button">
+                Start Voice Flow
+              </button>
+              <button
+                id="stop-button"
+                class="tertiary-button"
+                type="button"
+                disabled
+              >
+                Stop
+              </button>
+            </div>
+            <div class="status">
+              <h3>Activity Log</h3>
+              <div id="log"></div>
+            </div>
+          </section>
+          <section class="form-shell">
+            <h3>Registration Form</h3>
+            <p class="form-intro">
+              Provide accurate details exactly as they appear on your official
+              documents. The assistant can guide you through each required
+              field using voice commands.
+            </p>
+            <!-- <p class="note">
+              Environment variables required for the voice experience:
+              <code>VITE_AZURE_SPEECH_KEY</code>,
+              <code>VITE_AZURE_SPEECH_REGION</code>,
+              <code>VITE_BEDROCK_MODEL_ID</code>,
+              <code>VITE_BEDROCK_REGION</code>,
+              <code>VITE_AWS_ACCESS_KEY_ID</code>,
+              <code>VITE_AWS_SECRET_ACCESS_KEY</code>, and optionally
+              <code>VITE_AWS_SESSION_TOKEN</code>.
+            </p> -->
+            <form id="demo-form">
+              <section
+                class="form-step is-active"
+                data-step="1"
+                data-step-label="Citizen Account"
+              >
+                <h3>Create Citizen Account</h3>
+                <div class="form-grid simple-grid">
+                  <label for="userName">User Name<span aria-hidden="true"> *</span></label>
+                  <input
+                    id="userName"
+                    name="userName"
+                    type="text"
+                    pattern="[A-Za-z0-9]+"
+                    minlength="4"
+                    maxlength="32"
+                    required
+                  />
+
+                  <label for="fullName">Full Name<span aria-hidden="true"> *</span></label>
+                  <input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    minlength="2"
+                    maxlength="64"
+                    required
+                  />
+
+                  <label for="district">District<span aria-hidden="true"> *</span></label>
+                  <select id="district" name="district" required>
+                    <option value="">Select District</option>
+                    <option value="balod">Balod</option>
+                    <option value="bilaspur">Bilaspur</option>
+                    <option value="durg">Durg</option>
+                    <option value="kanker">Kanker</option>
+                    <option value="raipur">Raipur</option>
+                    <option value="raigarh">Raigarh</option>
+                    <option value="sukma">Sukma</option>
+                  </select>
+
+                  <label for="mobileNumber">Mobile Number<span aria-hidden="true"> *</span></label>
+                  <input
+                    id="mobileNumber"
+                    name="mobileNumber"
+                    type="tel"
+                    pattern="[6-9][0-9]{9}"
+                    minlength="10"
+                    maxlength="10"
+                    required
+                  />
+
+                  <label for="email">Email<span aria-hidden="true"> *</span></label>
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    maxlength="80"
+                    required
+                  />
+                </div>
+                <div class="form-guidance" role="note">
+                  <ol>
+                    <li>User names must be unique and consist of only letters and numbers.</li>
+                    <li>
+                      Password length must be at least 6; password must contain small letters,
+                      capital letters, numbers and special characters.
+                    </li>
+                  </ol>
+                </div>
+                <div class="step-controls">
+                  <button type="reset" class="tertiary-button">Reset</button>
+                  <button type="submit" class="primary-button" disabled>Submit</button>
+                </div>
+              </section>
+            </form>
+          </section>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

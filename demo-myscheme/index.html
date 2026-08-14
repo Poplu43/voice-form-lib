@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MyScheme · Voice-driven Personal Details</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="voice-bar">
+        <div class="voice-bar__row">
+          <div class="voice-bar__language">
+            <label for="language-select"
+              ><strong>Voice Language:</strong></label
+            >
+            <select id="language-select">
+              <option value="en-IN" selected>English</option>
+              <option value="hi-IN">Hindi (हिंदी)</option>
+            </select>
+          </div>
+          <div class="voice-bar__language">
+            <label for="noise-suppression-select"
+              ><strong>Noise Suppression:</strong></label
+            >
+            <select id="noise-suppression-select">
+              <option value="rnnoise-vad" selected>
+                RNNoise + Silero VAD (new)
+              </option>
+              <option value="legacy-rms">Legacy RMS gate (old)</option>
+            </select>
+          </div>
+          <div class="voice-bar__language">
+            <label for="record-audio-checkbox">
+              <input type="checkbox" id="record-audio-checkbox" />
+              <strong>Record raw vs. processed audio</strong>
+            </label>
+          </div>
+          <button
+            id="start-button"
+            class="voice-button voice-button--start"
+            type="button"
+          >
+            Start Voice Input
+          </button>
+          <button
+            id="stop-button"
+            class="voice-button voice-button--stop"
+            type="button"
+            disabled
+          >
+            Stop Voice Input
+          </button>
+          <!-- Added Enroll my voice button (Step A) -->
+          <button
+            id="enroll-button"
+            class="voice-button voice-button--enroll"
+            type="button"
+          >
+            Enroll my voice
+          </button>
+          <!-- <button
+            id="download-eval-button"
+            class="voice-button voice-button--eval"
+            type="button"
+            title="Download evaluation data (JSONL) for Ragas analysis"
+            disabled
+          >
+            ⬇ Eval Data
+          </button> -->
+          <div class="voice-bar__messages">
+            <div id="status-bubble" class="voice-bubble voice-bubble--status">
+              Voice assistant ready. Press <strong>Start Voice Input</strong> to
+              begin.
+            </div>
+            <div
+              id="prompt-bubble"
+              class="voice-bubble voice-bubble--prompt"
+            ></div>
+            <div
+              id="transcript-bubble"
+              class="voice-bubble voice-bubble--transcript"
+            ></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="recordings-panel" class="card" hidden>
+        <h2 class="card__heading">Noise Suppression A/B Comparison</h2>
+        <p>Listen to the same session before vs. after this library's audio processing.</p>
+        <div class="form-grid">
+          <div class="field">
+            <label for="raw-recording-audio">Raw (before)</label>
+            <audio id="raw-recording-audio" controls></audio>
+            <a id="raw-recording-download" download="raw.wav">Download</a>
+          </div>
+          <div class="field">
+            <label for="processed-recording-audio">Processed (after)</label>
+            <audio id="processed-recording-audio" controls></audio>
+            <a id="processed-recording-download" download="processed.wav">Download</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <form id="demo-form" novalidate>
+          <h2 class="card__heading">Enter Details</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="community"
+                >Community <span class="req">*</span></label
+              >
+              <select id="community" name="community" required>
+                <option value="">Please Select</option>
+                <option value="GENERAL">GENERAL</option>
+                <option value="OBC">OBC</option>
+                <option value="SC">SC</option>
+                <option value="ST">ST</option>
+                <option value="ST-PVGT">ST-PVGT</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="religion">Religion <span class="req">*</span></label>
+              <select id="religion" name="religion" required>
+                <option value="">Please Select</option>
+                <option value="HINDU">Hindu</option>
+                <option value="MUSLIM">Muslim</option>
+                <option value="CHRISTIAN">Christian</option>
+                <option value="SIKH">Sikh</option>
+                <option value="BUDDHIST">Buddhist</option>
+                <option value="JAIN">Jain</option>
+                <option value="PARSI">Parsi</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="annualIncome">
+                Annual Family Income (₹) <span class="req">*</span>
+              </label>
+              <input
+                id="annualIncome"
+                name="annualIncome"
+                type="number"
+                inputmode="numeric"
+                min="0"
+                max="100000000"
+                placeholder="Enter Income"
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="parentProfession">
+                Parent's Profession <span class="req">*</span>
+              </label>
+              <select
+                id="parentProfession"
+                name="parentProfession"
+                required
+                aria-placeholder="Profession"
+              >
+                <option value="">Please Select</option>
+                <option value="GOVT_EMPLOYEE">Government Employee</option>
+                <option value="PRIVATE_EMPLOYEE">Private Employee</option>
+                <option value="FARMER">Farmer</option>
+                <option value="BUSINESS">Business / Self-Employed</option>
+                <option value="DAILY_WAGE">Daily Wage Worker</option>
+                <option value="HOMEMAKER">Homemaker</option>
+                <option value="UNEMPLOYED">Unemployed</option>
+                <option value="RETIRED">Retired</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+
+            <div class="field">
+              <label for="maritalStatus">
+                Marital Status <span class="req">*</span>
+              </label>
+              <select id="maritalStatus" name="maritalStatus" required>
+                <option value="">Please Select</option>
+                <option value="Un Married">Un Married</option>
+                <option value="Married">Married</option>
+                <option value="Divorced">Divorced</option>
+                <option value="Widowed">Widowed</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+
+            <div class="field">
+              <label for="parentAlive">
+                Any of the Parents not alive <span class="req">*</span>
+              </label>
+              <select id="parentAlive" name="parentAlive" required>
+                <option value="">Please Select</option>
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+          </div>
+
+          <h2 class="card__heading">Permanent Address</h2>
+          <div class="form-grid">
+            <div class="field">
+              <label for="state">State <span class="req">*</span></label>
+              <input
+                id="state"
+                name="state"
+                type="text"
+                value="HARYANA"
+                readonly
+              />
+            </div>
+
+            <div class="field">
+              <label for="district">District <span class="req">*</span></label>
+              <select id="district" name="district" required>
+                <option value="">Please Select</option>
+                <option value="AMBALA">Ambala</option>
+                <option value="BHIWANI">Bhiwani</option>
+                <option value="FARIDABAD">Faridabad</option>
+                <option value="GURUGRAM">Gurugram</option>
+                <option value="HISAR">Hisar</option>
+                <option value="KARNAL">Karnal</option>
+                <option value="PANIPAT">Panipat</option>
+                <option value="ROHTAK">Rohtak</option>
+                <option value="SONIPAT">Sonipat</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+
+            <div class="field">
+              <label for="locality">Locality <span class="req">*</span></label>
+              <select id="locality" name="locality" required>
+                <option value="">Please Select</option>
+                <option value="URBAN">Urban</option>
+                <option value="RURAL">Rural</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+
+            <div class="field">
+              <label for="subDistrict">
+                Sub District <span class="req">*</span>
+              </label>
+              <select id="subDistrict" name="subDistrict" required>
+                <option value="">Please Select</option>
+                <option value="AMBALA_CANTT">Ambala Cantt</option>
+                <option value="NARAINGARH">Naraingarh</option>
+                <option value="BARARA">Barara</option>
+                <option value="BAWANI_KHERA">Bawani Khera</option>
+                <option value="LOHARU">Loharu</option>
+                <option value="TOSHAM">Tosham</option>
+                <option value="BALLABGARH">Ballabgarh</option>
+                <option value="TIGAON">Tigaon</option>
+                <option value="SOHNA">Sohna</option>
+                <option value="PATAUDI">Pataudi</option>
+                <option value="MANESAR">Manesar</option>
+                <option value="HANSI">Hansi</option>
+                <option value="ADAMPUR">Adampur</option>
+                <option value="NARNAUND">Narnaund</option>
+                <option value="ASSANDH">Assandh</option>
+                <option value="INDRI">Indri</option>
+                <option value="GHARAUNDA">Gharaunda</option>
+                <option value="NILOKHERI">Nilokheri</option>
+                <option value="ISRANA">Israna</option>
+                <option value="SAMALKHA">Samalkha</option>
+                <option value="MADLAUDA">Madlauda</option>
+                <option value="MEHAM">Meham</option>
+                <option value="SAMPLA">Sampla</option>
+                <option value="KALANAUR">Kalanaur</option>
+                <option value="GANAUR">Ganaur</option>
+                <option value="GOHANA">Gohana</option>
+                <option value="KHARKHODA">Kharkhoda</option>
+                <option value="RAI">Rai</option>
+              </select>
+              <span class="field__error">*This field is required</span>
+            </div>
+
+            <div class="field">
+              <label for="village">Village <span class="req">*</span></label>
+              <select id="village" name="village" required>
+                <option value="">Please Select</option>
+                <option value="BHAINSWAL_KALAN">Bhainswal Kalan</option>
+                <option value="DAHAR">Dahar</option>
+                <option value="GARHI_HARSARU">Garhi Harsaru</option>
+                <option value="HAILEY_MANDI">Hailey Mandi</option>
+                <option value="JATAULI">Jatauli</option>
+                <option value="KAKROI">Kakroi</option>
+                <option value="KAROLA">Karola</option>
+                <option value="KHEDI_MAJRA">Khedi Majra</option>
+                <option value="KHERKI_DAULA">Kherki Daula</option>
+                <option value="MADINA">Madina</option>
+                <option value="MOKHRA">Mokhra</option>
+                <option value="MURTHAL">Murthal</option>
+                <option value="ROHAT">Rohat</option>
+                <option value="SEHLANGA">Sehlanga</option>
+                <option value="KHANPUR">Khanpur</option>
+                <option value="BICHPARI">Bichpari</option>
+                <option value="MUNDLANA">Mundlana</option>
+                <option value="AHULANA">Ahulana</option>
+                <option value="SAIDPUR">Saidpur</option>
+                <option value="KHANDA">Khanda</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label for="houseNumber">
+                House No./ Street No. <span class="req">*</span>
+              </label>
+              <input
+                id="houseNumber"
+                name="houseNumber"
+                type="text"
+                maxlength="80"
+                placeholder="Enter House/Street No."
+                required
+              />
+            </div>
+
+            <div class="field">
+              <label for="pinCode">Pin Code <span class="req">*</span></label>
+              <input
+                id="pinCode"
+                name="pinCode"
+                type="text"
+                inputmode="numeric"
+                pattern="[0-9]{6}"
+                minlength="6"
+                maxlength="6"
+                placeholder="Enter Pin Code"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="reset" class="action-button action-button--reset">
+              Reset
+            </button>
+            <button
+              type="submit"
+              class="action-button action-button--save"
+              disabled
+            >
+              Save
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <script type="module" src="/main.ts"></script>
+  </body>
+</html>

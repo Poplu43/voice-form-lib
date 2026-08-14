@@ -1,0 +1,24 @@
+# Voice-form agentic evaluation dependencies
+# Install: pip install -r eval/requirements.txt
+
+# Core — 0.4.x required for ToolCallAccuracy + TopicAdherence from collections
+ragas>=0.4
+datasets>=2.0
+
+# AWS Bedrock LLM judge backend
+# ragas 0.4.x needs InstructorBaseRagasLLM which requires instructor-wrapped async client
+anthropic>=0.40        # AsyncAnthropicBedrock for Bedrock access
+instructor>=1.0        # adds response_model= support required by ragas
+boto3>=1.34
+
+# Bedrock compat shim (create once after install — see README or run evaluate.py)
+# If you see: ModuleNotFoundError: langchain_community.chat_models.vertexai
+#   pip install langchain-google-vertexai
+#   python -c "import os,langchain_community.chat_models as cm; open(os.path.join(os.path.dirname(cm.__file__),'vertexai.py'),'w').write('from langchain_google_vertexai import ChatVertexAI\n')"
+langchain-google-vertexai>=1.0
+
+# Optional: Ollama local judge (no API key needed)
+# openai>=1.0  # Ollama uses OpenAI-compatible API
+
+# Optional: langchain wrapper (deprecated in ragas 0.4 but still works as fallback)
+# langchain-aws>=0.1

@@ -1,0 +1,97 @@
+# ─────────────────────────────────────────────────────────────
+# Secrets — never commit. Only .env.example is tracked.
+# ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# Keys, certificates, credential stores
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+*.keystore
+*.jks
+id_rsa*
+id_ed25519*
+*credentials*
+*-secrets.*
+.aws/
+.npmrc
+.yarnrc.yml
+
+# Local docker overrides commonly hold real credentials.
+# The base docker-compose.yml is tracked (it uses ${VAR} interpolation only).
+docker-compose.override.yml
+docker-compose.*.yml
+!docker-compose.yml
+
+# ─────────────────────────────────────────────────────────────
+# Personal / biometric data
+# ─────────────────────────────────────────────────────────────
+# NOTE: this repo is PRIVATE, so the enrolled voiceprint and the NSP form
+# fixture are tracked. If it is ever made public, re-enable these two rules —
+# a speaker embedding is biometric data, and a verbatim offline copy of a live
+# government portal is trivially repurposed as a phishing page.
+#   voice_profile.json
+#   nsp.html
+
+# Raw audio is never committed regardless.
+*.wav
+*.mp3
+*.webm
+recordings/
+
+# ─────────────────────────────────────────────────────────────
+# Build/scratch output
+# ─────────────────────────────────────────────────────────────
+*_files/
+
+# ─────────────────────────────────────────────────────────────
+# Dependencies
+# ─────────────────────────────────────────────────────────────
+node_modules/
+/.pnp
+.pnp.js
+
+# ─────────────────────────────────────────────────────────────
+# Build output
+# ─────────────────────────────────────────────────────────────
+dist/
+lib/
+/build
+/out/
+/.next/
+demo-dist/
+*.tgz
+*.tsbuildinfo
+next-env.d.ts
+
+# ─────────────────────────────────────────────────────────────
+# Testing
+# ─────────────────────────────────────────────────────────────
+/coverage
+.nyc_output
+.scannerwork/
+
+# ─────────────────────────────────────────────────────────────
+# Tooling / local config
+# ─────────────────────────────────────────────────────────────
+.claude/settings.local.json
+.vscode/
+.idea/
+*.swp
+*-workspace
+.vercel
+
+# ─────────────────────────────────────────────────────────────
+# Logs & OS cruft
+# ─────────────────────────────────────────────────────────────
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+.DS_Store
+Thumbs.db

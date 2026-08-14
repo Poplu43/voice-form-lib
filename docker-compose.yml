@@ -1,0 +1,50 @@
+# Local dev for the voice-form-filling library.
+#
+# Usage:
+#   docker compose --env-file .env.local up --build
+#
+# The dev server is exposed at http://localhost:3045 by default.
+# Override DEMO_ROOT (default: demo-myscheme) to switch demos:
+#   DEMO_ROOT=demo-umang-second docker compose up --build
+#   DEMO_ROOT=demo               docker compose up --build
+
+services:
+  voice-form-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile-dev
+    image: voice-form-filling-demo:dev
+    container_name: voice-form-demo
+    ports:
+      - "${HOST_PORT:-3045}:3045"
+    environment:
+      # Which demo folder Vite serves.
+      DEMO_ROOT: ${DEMO_ROOT:-demo-myscheme}
+
+      # Azure Speech credentials.
+      VITE_AZURE_SPEECH_KEY: ${VITE_AZURE_SPEECH_KEY}
+      VITE_AZURE_SPEECH_REGION: ${VITE_AZURE_SPEECH_REGION}
+
+      # Amazon Bedrock model + credentials.
+      VITE_BEDROCK_MODEL_ID: ${VITE_BEDROCK_MODEL_ID}
+      VITE_BEDROCK_REGION: ${VITE_BEDROCK_REGION}
+      VITE_AWS_ACCESS_KEY_ID: ${VITE_AWS_ACCESS_KEY_ID}
+      VITE_AWS_SECRET_ACCESS_KEY: ${VITE_AWS_SECRET_ACCESS_KEY}
+      VITE_AWS_SESSION_TOKEN: ${VITE_AWS_SESSION_TOKEN:-}
+
+      # Pass through HTTPS opt-in (microphone access usually requires it on
+      # non-localhost hostnames). Default off.
+      DEV_SERVER_USE_HTTPS: ${DEV_SERVER_USE_HTTPS:-}
+      DEV_SERVER_SSL_KEY: ${DEV_SERVER_SSL_KEY:-}
+      DEV_SERVER_SSL_CERT: ${DEV_SERVER_SSL_CERT:-}
+      DEV_SERVER_SSL_CA: ${DEV_SERVER_SSL_CA:-}
+    volumes:
+      # Mount source so changes hot-reload without rebuilding the image.
+      - ./src:/app/src
+      - ./demo:/app/demo
+      - ./demo-myscheme:/app/demo-myscheme
+      - ./demo-umang-second:/app/demo-umang-second
+      - ./vite.config.ts:/app/vite.config.ts
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./tsconfig.app.json:/app/tsconfig.app.json
+    restart: unless-stopped

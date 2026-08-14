@@ -1,0 +1,375 @@
+import { SupportedLanguage } from "./types";
+
+/**
+ * Sarvam Speech Service
+ * 
+ * Note: This implementation follows the Sarvam SDK pattern for browser compatibility.
+ * The API key is passed in the connection URL as a query parameter, which Sarvam's
+ * infrastructure handles for authentication.
+ */
+
+export interface SarvamConfig {
+  apiKey: string; // Required: Sarvam API subscription key
+  language?: string; // e.g., "hi-IN", "en-IN"
+  
+  // Optional TTS customization
+  speaker?: string; // Voice speaker name (default: varies by language)
+  pitch?: number; // TTS pitch: 0.5 to 2.0 (default: 1.0) - Only for bulbul:v2
+  pace?: number; // TTS speed: 0.3 to 3.0 for v2, 0.5 to 2.0 for v3 (default: 1.0)
+  loudness?: number; // TTS loudness: 0.5 to 2.0 (default: 1.0) - Only for bulbul:v2
+  
+  // Internal fields (set by library, not user-configurable)
+  model?: string;
+  ttsModel?: string;
+  mode?: string;
+  sampleRate?: number;
+}
+
+export interface SarvamSTTMessage {
+  type: string;
+  data?: {
+    request_id?: string;
+    transcript?: string;
+    metrics?: {
+      audio_duration?: number;
+      processing_latency?: number;
+    };
+  };
+}
+
+export interface SarvamTTSMessage {
+  type: string;
+  data?: {
+    content_type?: string;
+    audio?: string; // base64 encoded audio
+  };
+}
+
+export type SarvamSTTClient = WebSocket;
+export type SarvamTTSClient = WebSocket;
+
+export interface SarvamSTTCallback {
+  (message: SarvamSTTMessage): void;
+}
+
+export interface SarvamTTSCallback {
+  (audioChunk: string): void; // base64 encoded audio chunk
+}
+
+export class SarvamSpeechService {
+  private config: SarvamConfig;
+  private sttClient: SarvamSTTClient | null = null;
+  private ttsClient: SarvamTTSClient | null = null;
+  private isSttConnected: boolean = false;
+  private isTtsConnected: boolean = false;
+
+  // Sarvam constants
+  private static readonly STT_ENDPOINT = "wss://api.sarvam.ai/speech-to-text/ws";
+  private static readonly TTS_ENDPOINT = "wss://api.sarvam.ai/text-to-speech/ws";
+  private static readonly STT_MODEL = "saaras:v3"; // Recommended model
+  private static readonly TTS_MODEL = "bulbul:v2"; // Default TTS model
+  private static readonly STT_MODE = "transcribe";
+  private static readonly SAMPLE_RATE = 16000;
+
+  constructor(config: SarvamConfig) {
+    const mappedLanguage = this.mapLanguageCodeToSarvam(
+      config.language || "hi-IN",
+    );
+
+    this.config = {
+      ...config,
+      language: mappedLanguage,
+      model: SarvamSpeechService.STT_MODEL,
+      ttsModel: config.ttsModel || SarvamSpeechService.TTS_MODEL,
+      mode: SarvamSpeechService.STT_MODE,
+      sampleRate: SarvamSpeechService.SAMPLE_RATE,
+      // TTS customization defaults
+      speaker: config.speaker || this.getDefaultSpeaker(mappedLanguage),
+      pitch: config.pitch || 1.0,
+      pace: config.pace || 1.0,
+      loudness: config.loudness || 1.0,
+    };
+
+    console.log(
+      `[SarvamSpeech] Initialized with language: ${mappedLanguage}, STT model: ${this.config.model}, TTS model: ${this.config.ttsModel}, speaker: ${this.config.speaker}`,
+    );
+  }
+
+  /**
+   * Map SupportedLanguage codes to Sarvam language codes
+   */
+  private mapLanguageCodeToSarvam(code: string): string {
+    const mapping: Record<string, string> = {
+      "en-US": "en-IN",
+      "hi-IN": "hi-IN",
+      en: "en-IN",
+      hi: "hi-IN",
+    };
+    return mapping[code] || "hi-IN";
+  }
+
+  /**
+   * Get default speaker for a language
+   */
+  private getDefaultSpeaker(languageCode: string): string {
+    const speakers: Record<string, string> = {
+      "hi-IN": "meera",
+      "en-IN": "arvind",
+      "bn-IN": "anushka",
+      "ta-IN": "kanha",
+      "te-IN": "priya",
+      "ml-IN": "lakshmi",
+      "mr-IN": "aarav",
+      "gu-IN": "diya",
+      "kn-IN": "ishaan",
+      "pa-IN": "kabir",
+    };
+    return speakers[languageCode] || "meera";
+  }
+
+  /**
+   * Create STT WebSocket client
+   * Uses query parameter authentication for browser compatibility
+   */
+  async createSTTClient(callback: SarvamSTTCallback): Promise<SarvamSTTClient> {
+    return new Promise((resolve, reject) => {
+      const queryParams = new URLSearchParams({
+        "language-code": this.config.language!,
+        model: this.config.model!,
+        mode: this.config.mode!,
+        sample_rate: this.config.sampleRate!.toString(),
+        input_audio_codec: "pcm_s16le",
+        // Note: Passing API key as query param for browser compatibility
+        // If Sarvam doesn't support this, you'll need to use their JavaScript SDK
+        "api-key": this.config.apiKey,
+      });
+
+      const wsUrl = `${SarvamSpeechService.STT_ENDPOINT}?${queryParams.toString()}`;
+
+      console.log("[SarvamSpeech] Connecting to STT WebSocket...");
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => {
+        console.log("[SarvamSpeech] STT WebSocket connected");
+        this.isSttConnected = true;
+        this.sttClient = ws;
+        resolve(ws);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message: SarvamSTTMessage = JSON.parse(event.data);
+          callback(message);
+        } catch (error) {
+          console.error("[SarvamSpeech] Failed to parse STT message:", error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("[SarvamSpeech] STT WebSocket error:", error);
+        console.error(
+          "[SarvamSpeech] If connection fails, Sarvam may require their JavaScript SDK. " +
+          "Check https://docs.sarvam.ai for SDK installation."
+        );
+        this.isSttConnected = false;
+        reject(error);
+      };
+
+      ws.onclose = () => {
+        console.log("[SarvamSpeech] STT WebSocket closed");
+        this.isSttConnected = false;
+        this.sttClient = null;
+      };
+    });
+  }
+
+  /**
+   * Send audio data to STT WebSocket
+   */
+  sendAudioToSTT(audioData: Int16Array): void {
+    if (!this.sttClient || !this.isSttConnected) {
+      console.warn("[SarvamSpeech] STT client not connected");
+      return;
+    }
+
+    // Convert Int16Array to base64
+    const base64Audio = this.int16ArrayToBase64(audioData);
+
+    const message = {
+      audio: {
+        data: base64Audio,
+        sample_rate: this.config.sampleRate!.toString(),
+        encoding: "audio/pcm",
+      },
+    };
+
+    this.sttClient.send(JSON.stringify(message));
+  }
+
+  /**
+   * Flush STT audio buffer
+   */
+  flushSTT(): void {
+    if (!this.sttClient || !this.isSttConnected) {
+      return;
+    }
+
+    const flushMessage = {
+      type: "flush",
+    };
+
+    this.sttClient.send(JSON.stringify(flushMessage));
+  }
+
+  /**
+   * Close STT WebSocket
+   */
+  closeSTT(): void {
+    if (this.sttClient) {
+      this.sttClient.close();
+      this.sttClient = null;
+      this.isSttConnected = false;
+    }
+  }
+
+  /**
+   * Create TTS WebSocket client and stream text
+   * Uses query parameter authentication for browser compatibility
+   */
+  async synthesizeSpeech(text: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const queryParams = new URLSearchParams({
+        model: this.config.ttsModel!,
+        send_completion_event: "true",
+        // Note: Passing API key as query param for browser compatibility
+        "api-key": this.config.apiKey,
+      });
+
+      const wsUrl = `${SarvamSpeechService.TTS_ENDPOINT}?${queryParams.toString()}`;
+
+      console.log("[SarvamSpeech] Connecting to TTS WebSocket...");
+      const ws = new WebSocket(wsUrl);
+      let audioChunks: string[] = [];
+
+      ws.onopen = () => {
+        console.log("[SarvamSpeech] TTS WebSocket connected");
+
+        // Send configuration
+        const configMessage = {
+          type: "config",
+          data: {
+            target_language_code: this.config.language!,
+            speaker: this.config.speaker!,
+            pitch: this.config.pitch,
+            pace: this.config.pace,
+            loudness: this.config.loudness,
+          },
+        };
+        ws.send(JSON.stringify(configMessage));
+
+        // Send text
+        const textMessage = {
+          type: "text",
+          data: {
+            text: text,
+          },
+        };
+        ws.send(JSON.stringify(textMessage));
+
+        // Send flush to complete
+        const flushMessage = {
+          type: "flush",
+        };
+        ws.send(JSON.stringify(flushMessage));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message: SarvamTTSMessage = JSON.parse(event.data);
+
+          if (message.type === "audio" && message.data?.audio) {
+            audioChunks.push(message.data.audio);
+          } else if (message.type === "event") {
+            // Completion event - close connection and resolve with audio
+            ws.close();
+            const fullAudio = audioChunks.join("");
+            resolve(fullAudio);
+          }
+        } catch (error) {
+          console.error("[SarvamSpeech] Failed to parse TTS message:", error);
+          reject(error);
+        }
+      };
+
+      ws.onerror = (error) => {
+        console.error("[SarvamSpeech] TTS WebSocket error:", error);
+        console.error(
+          "[SarvamSpeech] If connection fails, Sarvam may require their JavaScript SDK. " +
+          "Check https://docs.sarvam.ai for SDK installation."
+        );
+        ws.close();
+        reject(error);
+      };
+
+      ws.onclose = (event) => {
+        console.log("[SarvamSpeech] TTS WebSocket closed", event.code);
+        if (!event.wasClean && audioChunks.length === 0) {
+          reject(new Error("TTS connection closed unexpectedly"));
+        } else if (audioChunks.length > 0) {
+          // Connection closed but we have audio chunks
+          const fullAudio = audioChunks.join("");
+          resolve(fullAudio);
+        }
+      };
+    });
+  }
+
+  /**
+   * Update language and default speaker
+   */
+  updateLanguage(language: string): void {
+    const mappedLanguage = this.mapLanguageCodeToSarvam(language);
+    this.config.language = mappedLanguage;
+    this.config.speaker = this.getDefaultSpeaker(mappedLanguage);
+    console.log(
+      `[SarvamSpeech] Language updated to: ${mappedLanguage}, speaker: ${this.config.speaker}`,
+    );
+  }
+
+  /**
+   * Convert Int16Array to base64 string
+   */
+  private int16ArrayToBase64(int16Array: Int16Array): string {
+    // Convert Int16Array to Uint8Array (byte array)
+    const uint8Array = new Uint8Array(int16Array.buffer);
+
+    // Convert to base64
+    let binary = "";
+    const len = uint8Array.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(uint8Array[i]);
+    }
+    return btoa(binary);
+  }
+
+  /**
+   * Get API key for header injection (if needed server-side)
+   */
+  get apiKey(): string {
+    return this.config.apiKey;
+  }
+
+  /**
+   * Check if STT is connected
+   */
+  get sttConnected(): boolean {
+    return this.isSttConnected;
+  }
+
+  /**
+   * Check if TTS is connected
+   */
+  get ttsConnected(): boolean {
+    return this.isTtsConnected;
+  }
+}

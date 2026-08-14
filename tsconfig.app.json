@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "types": ["vite/client"],
+    "paths": {
+      "@voice-form": ["./src/index.ts"],
+      "@voice-form/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "demo"]
+}
